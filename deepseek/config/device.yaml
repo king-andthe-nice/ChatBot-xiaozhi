@@ -1,0 +1,4 @@
+# 用于检查更新的服务器地址
+CONFIG_URL: 'https://api.tenclass.net/xiaozhi/ota/'
+# 设备MAC
+DEVICE_ADDR: 'f7:e1:3b:12:a8:d5' #自己随机设置一个类似格式的地址
