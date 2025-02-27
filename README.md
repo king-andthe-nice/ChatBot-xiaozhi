@@ -56,6 +56,7 @@ DEVICE_ADDR: '你的设备MAC地址'
 
 ```bash
 python chat_deepseek.py
+登录到控制面板地址：https://xiaozhi.me/login
 ```
 
 2. 操作说明：
