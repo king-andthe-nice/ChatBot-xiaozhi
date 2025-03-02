@@ -1,0 +1,87 @@
+name: Build and Release XiaoZhi Voice Assistant
+
+on:
+  # 当推送到main分支或创建新标签时自动触发
+  push:
+    branches: [ main ]
+    tags:
+      - 'v*'
+  # 允许手动触发工作流
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g. v1.0.0)'
+        required: false
+        default: 'dev-build'
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install wheel setuptools
+        # 安装PyAudio前先安装必要的Windows构建工具
+        pip install pipwin
+        pipwin install pyaudio
+        # 安装其他依赖
+        pip install -r requirements.txt
+        pip install pyinstaller
+    
+    - name: Build with PyInstaller
+      run: |
+        # 使用--add-data确保资源文件被包含
+        pyinstaller --onefile --add-data "opus.dll;." --add-data "deepseek;deepseek" chat_deepseek.py
+    
+    - name: Determine version
+      id: get_version
+      run: |
+        if ("${{ github.event_name }}" -eq "push" -and "${{ startsWith(github.ref, 'refs/tags/') }}" -eq "true") {
+          $env:VERSION="${{ github.ref }}".Replace('refs/tags/', '')
+        } elseif ("${{ github.event_name }}" -eq "workflow_dispatch" -and "${{ github.event.inputs.version }}" -ne "") {
+          $env:VERSION="${{ github.event.inputs.version }}"
+        } else {
+          $env:VERSION="dev-build-$(Get-Date -Format 'yyyyMMddHHmm')"
+        }
+        echo "VERSION=$env:VERSION" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      shell: pwsh
+    
+    - name: Create artifacts directory
+      run: mkdir artifacts
+      shell: pwsh
+    
+    - name: Copy executable and README
+      run: |
+        copy dist\chat_deepseek.exe artifacts\xiaozhi-voice-assistant-${{ env.VERSION }}.exe
+        copy README.md artifacts\
+      shell: pwsh
+    
+    # 使用更现代的GitHub Release Action
+    - name: Create GitHub Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        name: XiaoZhi Voice Assistant ${{ env.VERSION }}
+        files: |
+          artifacts/xiaozhi-voice-assistant-${{ env.VERSION }}.exe
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+    # 所有情况都上传构建产物作为工作流Artifacts
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: xiaozhi-voice-assistant-${{ env.VERSION }}
+        path: artifacts/ 

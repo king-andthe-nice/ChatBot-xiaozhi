@@ -328,11 +328,12 @@ class VoiceBot:
                 1. pynput.keyboard.Key: 特殊键（如空格、ESC等）
                 2. pynput.keyboard.KeyCode: 字符键（如字母、数字等）
         """
-        #改用空格键
-        # if key == pynput_keyboard.Key.space:
-        #     self.handle_voice_input_start(None)
-        if key == pynput_keyboard.Key.f23:
+        #使用空格键作为触发键
+        if key == pynput_keyboard.Key.space:
             self.handle_voice_input_start(None)
+        # 原F23按键已禁用
+        # if key == pynput_keyboard.Key.f23:
+        #     self.handle_voice_input_start(None)
         # 如果要使用字符键，可以这样：
         # if hasattr(key, 'char') and key.char == 'a':
         #     self.handle_voice_input_start(None)
@@ -344,10 +345,11 @@ class VoiceBot:
         Args:
             key: 同上，pynput自动传入的按键对象
         """
-        # if key == pynput_keyboard.Key.space:
-        #     self.handle_voice_input_end(None)
-        if key == pynput_keyboard.Key.f23:
+        if key == pynput_keyboard.Key.space:
             self.handle_voice_input_end(None)
+        # 原F23按键已禁用
+        # if key == pynput_keyboard.Key.f23:
+        #     self.handle_voice_input_end(None)
         if key == pynput_keyboard.Key.esc:
             return False  # 返回False会停止监听
 
@@ -380,7 +382,7 @@ class VoiceBot:
         )
 
         # 3. 连接到加密的 MQTT 端口（8883是标准的 MQTT over TLS 端口）
-        self.mqttc.connect(host=self.mqtt_info['endpoint'], port=8883)  # 连接到MQTT服务器：服务器地址，从配置中获取，8883-使用标准的 MQTT over TLS 端口
+        self.mqttc.connect(host=self.mqtt_info['endpoint'], port=8883, keepalive=120)  # keepalive设为120秒(2分钟)
         self.mqttc.loop_forever()  # 开始消息循环
         '''
         启动一个永久运行的消息循环
